@@ -1,20 +1,22 @@
+use crate::api::auth::AuthUserResource;
 use crate::components::{Button, ButtonSize, ButtonVariant, Icon, IconKind, IconPosition, MetaFor};
 use dioxus::prelude::*;
 
 #[component]
 pub fn Start() -> Element {
-    let current_user = use_server_future(|| async {
-        crate::api::auth::fetch_current_user().await.unwrap_or(None)
-    })?;
+    let current_user = use_context::<AuthUserResource>();
     let user_state = current_user.read().clone();
     let is_authenticated = matches!(user_state.as_ref(), Some(Some(_)));
     let navigator = use_navigator();
 
-    use_effect(move || {
-        if is_authenticated {
-            let _ = navigator.replace("/app");
-        }
-    });
+    use_effect(use_reactive(
+        (&is_authenticated,),
+        move |(is_authenticated,)| {
+            if is_authenticated {
+                let _ = navigator.replace("/app");
+            }
+        },
+    ));
 
     if is_authenticated {
         return rsx! {

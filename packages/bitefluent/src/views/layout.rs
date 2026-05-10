@@ -1,10 +1,14 @@
 use crate::Route;
+use crate::api::auth::fetch_current_user;
 use crate::components::Footer;
 use crate::views::Navbar;
 use dioxus::prelude::*;
 
 #[component]
 pub fn AppLayout() -> Element {
+    let current_user = use_resource(|| async { fetch_current_user().await.unwrap_or(None) });
+    use_context_provider(|| current_user);
+
     let route = use_route::<Route>();
 
     let mut transition_tick = use_signal(|| 0usize);

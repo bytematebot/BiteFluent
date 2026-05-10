@@ -1,12 +1,12 @@
 use dioxus::prelude::*;
 
-use crate::api::auth::fetch_current_user;
+use crate::api::auth::AuthUserResource;
 use crate::components::{Button, ButtonSize, ButtonVariant};
 const LOGO: Asset = asset!("/assets/logo.svg");
 
 #[component]
 pub fn Navbar() -> Element {
-    let current_user = use_server_future(|| async { fetch_current_user().await.unwrap_or(None) })?;
+    let current_user = use_context::<AuthUserResource>();
     let user_state = current_user.read().clone();
 
     rsx! {

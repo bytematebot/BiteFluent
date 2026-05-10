@@ -10,6 +10,8 @@ pub struct AuthUserDto {
     pub image: Option<String>,
 }
 
+pub type AuthUserResource = Resource<Option<AuthUserDto>>;
+
 #[get("/api/auth/session", headers: HeaderMap)]
 pub async fn fetch_current_user() -> ServerFnResult<Option<AuthUserDto>> {
     #[cfg(feature = "server")]

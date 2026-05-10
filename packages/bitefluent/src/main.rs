@@ -17,13 +17,12 @@ use dioxus::prelude::*;
 #[rustfmt::skip]
 enum Route {
     #[layout(AppLayout)]
-    #[route("/")]
-    Home {},
-    #[layout(AppLayout)]
-    #[route("/app")]
-    AppPlatform {},
-    #[route("/start")]
-    Start {},
+        #[route("/")]
+        Home {},
+        #[route("/app")]
+        AppPlatform {},
+        #[route("/start")]
+        Start {},
 }
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const FAVICON: Asset = asset!("/assets/favicon/favicon-32x32.png");
