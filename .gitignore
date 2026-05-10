@@ -1,0 +1,22 @@
+# Rust
+target/
+**/target/
+Cargo.lock
+**/Cargo.lock
+
+# Env files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# JetBrains
+.idea/
+**/.idea/
+*.iml
+
+# byteorm
+/packages/bitefluent/generated
+
+# tailwind asset
+/packages/bitefluent/assets/tailwind.css

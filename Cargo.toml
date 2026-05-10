@@ -1,0 +1,12 @@
+[workspace]
+resolver = "3"
+members = [
+    "packages/bitefluent",
+    "packages/dioxus-auth"
+]
+
+[workspace.package]
+authors = ["meetzli <63364127+meetzli@users.noreply.github.com>"]
+edition = "2024"
+license = "AGPL-3"
+repository = "https://github.com/bytematebot/bitefluent"

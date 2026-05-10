@@ -1,0 +1,41 @@
+model Users {
+    id Text PrimaryKey
+
+    name Text?
+    email Text?
+    email_verified TimestamptZ?
+    image Text?
+
+    created_at TimestamptZ NotNull @default(now())
+    updated_at TimestamptZ NotNull @default(now())
+}
+
+model Accounts {
+    id Text PrimaryKey
+    user_id Text NotNull ForeignKey(Users.id, onDelete: cascade)
+
+    provider Text NotNull
+    provider_account_id Text NotNull
+
+    access_token Text?
+    refresh_token Text?
+    expires_at TimestamptZ?
+    token_type Text?
+    scope Text?
+    id_token Text?
+
+    created_at TimestamptZ NotNull @default(now())
+    updated_at TimestamptZ NotNull @default(now())
+
+    @@unique([provider, provider_account_id])
+}
+
+model Sessions {
+    session_token_hash Text PrimaryKey
+
+    user_id Text NotNull ForeignKey(Users.id, onDelete: cascade)
+    expires_at TimestamptZ NotNull
+
+    created_at TimestamptZ NotNull @default(now())
+    updated_at TimestamptZ NotNull @default(now())
+}
