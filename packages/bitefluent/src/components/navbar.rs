@@ -73,7 +73,7 @@ pub fn Navbar() -> Element {
                     match user_state.as_ref() {
                         Some(Some(user)) => rsx! {
                             UserMenu {
-                                name: user.name.clone(),
+                                name: user.display_name.clone(),
                                 image: user.image.clone(),
                             }
                         },

@@ -5,6 +5,7 @@ model Users {
     email Text?
     email_verified TimestamptZ?
     image Text?
+    onboarded Boolean @default(false)
 
     created_at TimestamptZ NotNull @default(now())
     updated_at TimestamptZ NotNull @default(now())

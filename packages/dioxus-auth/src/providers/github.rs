@@ -18,7 +18,7 @@ impl GitHubProvider {
         Self {
             client_id: client_id.into(),
             client_secret: client_secret.into(),
-            scopes: vec!["read:user", "user:email"],
+            scopes: vec!["read:user", "user:email", "repo", "read:org"],
             http: reqwest::Client::new(),
         }
     }

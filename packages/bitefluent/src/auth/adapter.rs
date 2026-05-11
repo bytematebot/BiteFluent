@@ -138,6 +138,24 @@ impl AuthAdapter for BiteFluentAuthAdapter {
 
         account.map(map_account).transpose()
     }
+
+    async fn get_github_account_for_user(
+        &self,
+        user_id: &str,
+    ) -> AuthResult<Option<AuthAccount>> {
+        let account = self
+            .db
+            .client
+            .accounts
+            .find_first(|a| {
+                a.where_user_id(user_id.to_string())
+                    .where_provider("github".to_string())
+            })
+            .await
+            .map_err(|err| AuthError::Adapter(err.to_string()))?;
+
+        account.map(map_account).transpose()
+    }
 }
 
 fn map_user(user: byteorm_client::Users) -> AuthResult<AuthUser> {

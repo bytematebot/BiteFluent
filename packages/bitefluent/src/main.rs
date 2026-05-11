@@ -3,6 +3,8 @@ mod api;
 mod auth;
 mod components;
 mod views;
+#[cfg(feature = "server")]
+mod integrations;
 
 #[cfg(feature = "server")]
 use crate::auth::{BiteFluentAuthAdapter, BiteFluentSessionStore, Db};
@@ -32,6 +34,8 @@ fn main() {
 
     #[cfg(feature = "server")]
     {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+
         dioxus::serve(server_router);
     }
 
