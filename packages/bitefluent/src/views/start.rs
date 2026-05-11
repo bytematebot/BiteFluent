@@ -91,35 +91,35 @@ pub fn Start() -> Element {
                         }),
                     }
 
-                    Button {
-                        label: "Continue with Discord",
-                        href: Some("/auth/signin/discord"),
-                        variant: ButtonVariant::Secondary,
-                        size: ButtonSize::Lg,
-                        full_width: true,
-                        balanced: true,
-                        class: Some("h-14 px-6".to_string()),
-                        icon: Some(Icon {
-                            kind: IconKind::Discord,
-                            position: IconPosition::Left,
-                            class: Some("size-6 text-[color:var(--bg-accent)]".to_string()),
-                        }),
-                    }
+                    // Button {
+                    //     label: "Continue with Discord",
+                    //     href: Some("/auth/signin/discord"),
+                    //     variant: ButtonVariant::Secondary,
+                    //     size: ButtonSize::Lg,
+                    //     full_width: true,
+                    //     balanced: true,
+                    //     class: Some("h-14 px-6".to_string()),
+                    //     icon: Some(Icon {
+                    //         kind: IconKind::Discord,
+                    //         position: IconPosition::Left,
+                    //         class: Some("size-6 text-[color:var(--bg-accent)]".to_string()),
+                    //     }),
+                    // }
 
-                    Button {
-                        label: "Continue with Google",
-                        href: Some("/auth/signin/google"),
-                        variant: ButtonVariant::Secondary,
-                        size: ButtonSize::Lg,
-                        full_width: true,
-                        balanced: true,
-                        class: Some("h-14 px-6".to_string()),
-                        icon: Some(Icon {
-                            kind: IconKind::Google,
-                            position: IconPosition::Left,
-                            class: Some("size-6".to_string()),
-                        }),
-                    }
+                    // Button {
+                    //     label: "Continue with Google",
+                    //     href: Some("/auth/signin/google"),
+                    //     variant: ButtonVariant::Secondary,
+                    //     size: ButtonSize::Lg,
+                    //     full_width: true,
+                    //     balanced: true,
+                    //     class: Some("h-14 px-6".to_string()),
+                    //     icon: Some(Icon {
+                    //         kind: IconKind::Google,
+                    //         position: IconPosition::Left,
+                    //         class: Some("size-6".to_string()),
+                    //     }),
+                    // }
                 }
             }
         }

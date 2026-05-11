@@ -135,3 +135,90 @@ button {
     cursor: pointer;
     user-select: none;
 }
+
+.bf-skeleton {
+    animation: none;
+}
+
+.bf-skeleton :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    label,
+    span,
+    a,
+    button,
+    input,
+    img,
+    svg
+) {
+    color: transparent !important;
+}
+
+.bf-skeleton :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    label,
+    span,
+    a,
+    button,
+    input
+) {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.bf-skeleton :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    label,
+    span
+):not(:empty) {
+    position: relative;
+}
+
+.bf-skeleton :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    label,
+    span
+):not(:empty)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.06);
+    animation: bf-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.bf-skeleton :where(svg, img) {
+    opacity: 0 !important;
+}
+
+.bf-skeleton :where(input)::placeholder {
+    color: transparent !important;
+}
+
+.bf-skeleton :where(button) {
+    cursor: default !important;
+}
+
+@keyframes bf-skeleton-pulse {
+    0%, 100% {
+        opacity: 0.55;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

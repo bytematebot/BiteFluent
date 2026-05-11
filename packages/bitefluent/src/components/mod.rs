@@ -11,5 +11,9 @@ pub mod meta;
 pub use footer::*;
 pub use meta::*;
 
-mod select;
+pub mod select;
+pub mod skeleton;
+
 pub use select::{Select, SelectOption};
+
+pub use skeleton::*;
