@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use crate::components::{IconKind, RenderIcon};
 
 #[derive(Clone, PartialEq)]
 pub struct SelectOption {
@@ -61,8 +62,16 @@ pub fn Select(props: SelectProps) -> Element {
                 }
 
                 span {
-                    class: "text-[color:var(--text-muted)]",
-                    if open() { "⌃" } else { "⌄" }
+                    class: if open() {
+                        "rotate-180 text-[color:var(--text-muted)] transition"
+                    } else {
+                        "text-[color:var(--text-muted)] transition"
+                    },
+
+                    RenderIcon {
+                        kind: IconKind::ChevronDown,
+                        class: Some("size-3.5".to_string()),
+                    }
                 }
             }
 

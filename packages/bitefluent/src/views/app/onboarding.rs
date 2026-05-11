@@ -1,6 +1,9 @@
 use crate::api::auth::AuthUserDto;
 use crate::api::github::{fetch_github_repositories, GithubRepositoryDto};
-use crate::components::{Button, ButtonSize, ButtonVariant, Icon, IconKind, IconPosition, RenderIcon, Select, SelectOption};
+use crate::components::{
+    Button, ButtonSize, ButtonVariant, Icon, IconKind, IconPosition, RenderIcon, Select,
+    SelectOption,
+};
 use dioxus::prelude::*;
 
 #[component]
@@ -64,7 +67,7 @@ fn OnboardingIntro() -> Element {
                 }
 
                 OnboardingBenefit {
-                    icon: IconKind::Arrow,
+                    icon: IconKind::Zap,
                     title: "Quick and easy",
                     description: "You can switch repositories anytime.",
                 }
@@ -75,7 +78,11 @@ fn OnboardingIntro() -> Element {
 
                 span {
                     class: "inline-flex size-5 items-center justify-center rounded-md border border-white/[0.12] text-[color:var(--text-muted)]",
-                    "⌘"
+
+                    RenderIcon {
+                        kind: IconKind::Lock,
+                        class: Some("size-3".to_string()),
+                    }
                 }
 
                 "BiteFluent is read-only and secure."
@@ -92,8 +99,6 @@ fn RepositoryCard(
     selected_owner: Signal<Option<String>>,
     on_reload: EventHandler<MouseEvent>,
 ) -> Element {
-    let initial = user.display_name.chars().next().unwrap_or('?');
-
     rsx! {
         div {
             class: "w-full max-w-2xl justify-self-end",
@@ -107,6 +112,7 @@ fn RepositoryCard(
                     user,
                     repository_state: repository_state.clone(),
                     selected_owner,
+                    selected_repository_id,
                 }
 
                 RepositorySearch {}
@@ -137,14 +143,20 @@ fn RepositoryCard(
             }
 
             p {
-                class: "mt-5 text-center text-sm text-[color:var(--text-muted)]",
+                class: "mt-5 flex items-center justify-center gap-1.5 text-center text-sm text-[color:var(--text-muted)]",
 
                 "Can't find your repository? Make sure it's accessible and "
 
                 button {
-                    class: "font-medium text-[color:var(--bg-accent)] transition hover:opacity-80",
+                    class: "inline-flex items-center gap-1.5 font-medium text-[color:var(--bg-accent)] transition hover:opacity-80",
                     type: "button",
                     onclick: move |event| on_reload.call(event),
+
+                    RenderIcon {
+                        kind: IconKind::Refresh,
+                        class: Some("size-3".to_string()),
+                    }
+
                     "try reloading"
                 }
 
@@ -154,29 +166,24 @@ fn RepositoryCard(
     }
 }
 
-
 #[component]
 fn OwnerSelect(
     user: AuthUserDto,
     repository_state: Option<ServerFnResult<Vec<GithubRepositoryDto>>>,
     selected_owner: Signal<Option<String>>,
+    selected_repository_id: Signal<Option<u64>>,
 ) -> Element {
-    let mut owners = match repository_state.as_ref() {
-        Some(Ok(repositories)) => repositories
-            .iter()
-            .map(|repository| repository.owner.clone())
-            .collect::<Vec<_>>(),
-        _ => Vec::new(),
-    };
+    let owners = repository_state
+        .as_ref()
+        .and_then(|state| state.as_ref().ok())
+        .map(|repositories| repository_owners(repositories))
+        .unwrap_or_default();
 
-    owners.sort();
-    owners.dedup();
-
-    let fallback_owner = user.display_name.clone();
-
-    let current_owner = selected_owner()
-        .or_else(|| owners.first().cloned())
-        .unwrap_or(fallback_owner);
+    let current_owner = effective_owner(
+        &repository_state,
+        selected_owner,
+        user.display_name.clone(),
+    );
 
     let initial = current_owner.chars().next().unwrap_or('?');
 
@@ -200,6 +207,7 @@ fn OwnerSelect(
             }),
             on_change: move |owner| {
                 selected_owner.set(Some(owner));
+                selected_repository_id.set(None);
             },
         }
     }
@@ -250,9 +258,9 @@ fn RepositorySearch() -> Element {
         div {
             class: "mt-4 flex h-12 items-center gap-3 rounded-xl border border-white/[0.10] bg-white/[0.025] px-4",
 
-            span {
-                class: "text-[color:var(--text-muted)]",
-                "⌕"
+            RenderIcon {
+                kind: IconKind::Search,
+                class: Some("size-4 shrink-0 text-[color:var(--text-muted)]".to_string()),
             }
 
             input {
@@ -269,24 +277,33 @@ fn RepositoryList(
     selected_repository_id: Signal<Option<u64>>,
     selected_owner: Signal<Option<String>>,
 ) -> Element {
-    let visible_repositories = match repository_state.as_ref() {
-        Some(Ok(repositories)) => {
-            let owner = selected_owner();
+    let current_owner = repository_state
+        .as_ref()
+        .and_then(|state| state.as_ref().ok())
+        .and_then(|repositories| {
+            selected_owner()
+                .or_else(|| repository_owners(repositories).first().cloned())
+        });
 
-            repositories
-                .iter()
-                .filter(|repository| {
-                    owner
-                        .as_ref()
-                        .map(|owner| repository.owner == *owner)
-                        .unwrap_or(true)
-                })
-                .take(5)
-                .cloned()
-                .collect::<Vec<_>>()
-        }
+    let visible_repositories = match repository_state.as_ref() {
+        Some(Ok(repositories)) => repositories
+            .iter()
+            .filter(|repository| {
+                current_owner
+                    .as_ref()
+                    .map(|owner| repository.owner == *owner)
+                    .unwrap_or(true)
+            })
+            .take(5)
+            .cloned()
+            .collect::<Vec<_>>(),
         _ => Vec::new(),
     };
+
+    let selected_id = selected_repository_id();
+    let should_select_first = selected_id
+        .map(|id| !visible_repositories.iter().any(|repo| repo.id == id))
+        .unwrap_or(true);
 
     rsx! {
         div {
@@ -316,9 +333,9 @@ fn RepositoryList(
                 Some(Ok(_)) => rsx! {
                     for (index, repository) in visible_repositories.into_iter().enumerate() {
                         RepositoryRow {
-                            selected: selected_repository_id()
+                            selected: selected_id
                                 .map(|id| id == repository.id)
-                                .unwrap_or(index == 0),
+                                .unwrap_or(false) || (should_select_first && index == 0),
                             repository,
                             on_select: move |repository_id| {
                                 selected_repository_id.set(Some(repository_id));
@@ -415,12 +432,18 @@ fn RepositoryRow(
 
             span {
                 class: "{check_class}",
-                if selected { "✓" }
+
+                if selected {
+                    RenderIcon {
+                        kind: IconKind::CheckNoCircle,
+                        class: Some("size-3".to_string()),
+                    }
+                }
             }
 
-            span {
-                class: "flex size-5 shrink-0 items-center justify-center text-[color:var(--text-muted)]",
-                "▣"
+            RenderIcon {
+                kind: IconKind::Repository,
+                class: Some("size-5 shrink-0 text-[color:var(--text-muted)]".to_string()),
             }
 
             span {
@@ -431,11 +454,6 @@ fn RepositoryRow(
             span {
                 class: "rounded-full bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-[color:var(--text-muted)]",
                 "{visibility}"
-            }
-
-            span {
-                class: "{select_class}",
-                "Select"
             }
         }
     }
@@ -454,4 +472,31 @@ fn RepositorySkeleton() -> Element {
             span { class: "h-9 w-20 animate-pulse rounded-lg bg-white/[0.06]" }
         }
     }
+}
+
+fn repository_owners(repositories: &[GithubRepositoryDto]) -> Vec<String> {
+    let mut owners = repositories
+        .iter()
+        .map(|repository| repository.owner.clone())
+        .collect::<Vec<_>>();
+
+    owners.sort();
+    owners.dedup();
+
+    owners
+}
+
+fn effective_owner(
+    repository_state: &Option<ServerFnResult<Vec<GithubRepositoryDto>>>,
+    selected_owner: Signal<Option<String>>,
+    fallback: String,
+) -> String {
+    selected_owner().unwrap_or_else(|| {
+        repository_state
+            .as_ref()
+            .and_then(|state| state.as_ref().ok())
+            .map(|repositories| repository_owners(repositories))
+            .and_then(|owners| owners.first().cloned())
+            .unwrap_or(fallback)
+    })
 }
