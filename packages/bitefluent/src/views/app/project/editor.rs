@@ -2,10 +2,7 @@ use crate::api::projects::{ProjectDto, ProjectWorkspaceKeyDto};
 use dioxus::prelude::*;
 
 #[component]
-pub fn ProjectEditorPanel(
-    project: ProjectDto,
-    entry: Option<ProjectWorkspaceKeyDto>,
-) -> Element {
+pub fn ProjectEditorPanel(project: ProjectDto, entry: Option<ProjectWorkspaceKeyDto>) -> Element {
     rsx! {
         section {
             class: "flex min-w-0 flex-col bg-black/[0.08]",

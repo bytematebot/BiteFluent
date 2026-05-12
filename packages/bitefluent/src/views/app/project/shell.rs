@@ -1,4 +1,4 @@
-use crate::api::projects::{fetch_project_workspace, ProjectWorkspaceDto};
+use crate::api::projects::{ProjectWorkspaceDto, fetch_project_workspace};
 use crate::components::{MetaFor, Skeleton};
 use dioxus::prelude::*;
 
@@ -52,8 +52,8 @@ fn ProjectWorkspace(
     selected_file: Signal<Option<String>>,
     selected_key: Signal<Option<String>>,
 ) -> Element {
-    let current_file = selected_file()
-        .or_else(|| workspace.files.first().map(|file| file.path.clone()));
+    let current_file =
+        selected_file().or_else(|| workspace.files.first().map(|file| file.path.clone()));
 
     let visible_keys = current_file
         .as_ref()
@@ -67,17 +67,14 @@ fn ProjectWorkspace(
         })
         .unwrap_or_default();
 
-    let current_key = selected_key()
-        .or_else(|| visible_keys.first().map(|key| key.key.clone()));
+    let current_key = selected_key().or_else(|| visible_keys.first().map(|key| key.key.clone()));
 
-    let selected_entry = current_key
-        .as_ref()
-        .and_then(|key_name| {
-            visible_keys
-                .iter()
-                .find(|key| &key.key == key_name)
-                .cloned()
-        });
+    let selected_entry = current_key.as_ref().and_then(|key_name| {
+        visible_keys
+            .iter()
+            .find(|key| &key.key == key_name)
+            .cloned()
+    });
 
     rsx! {
         div {

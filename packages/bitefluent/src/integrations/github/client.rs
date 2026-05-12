@@ -115,11 +115,7 @@ impl GithubClient {
         let response = self.fetch_tree_recursive(owner, repo, branch).await?;
 
         if !response.truncated {
-            return Ok(response
-                .tree
-                .into_iter()
-                .map(tree_item_to_file)
-                .collect());
+            return Ok(response.tree.into_iter().map(tree_item_to_file).collect());
         }
 
         eprintln!(
@@ -149,7 +145,6 @@ impl GithubClient {
         self.repository_tree_walk_with_prefix(owner, repo, &tree_sha, normalized_path)
             .await
     }
-
 
     pub async fn repository_blob_content(
         &self,

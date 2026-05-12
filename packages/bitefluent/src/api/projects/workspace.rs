@@ -217,8 +217,7 @@ fn looks_like_locale(value: &str) -> bool {
     match parts.as_slice() {
         [language] => language.len() == 2 || language.len() == 3,
         [language, region] => {
-            (language.len() == 2 || language.len() == 3)
-                && (region.len() == 2 || region.len() == 4)
+            (language.len() == 2 || language.len() == 3) && (region.len() == 2 || region.len() == 4)
         }
         _ => false,
     }
