@@ -37,13 +37,13 @@ pub fn Hero() -> Element {
                             }),
                             variant: ButtonVariant::Primary,
                             size: ButtonSize::Lg,
-                            to: Some("/start")
+                            to: "/start"
                         }
 
                         Button {
                             label: "View on GitHub",
                             variant: ButtonVariant::Secondary,
-                            href: Some("https://github.com/bytematebot/bitefluent"),
+                            href: "https://github.com/bytematebot/bitefluent",
                             icon: Some(Icon {
                                 kind: IconKind::Github,
                                 position: IconPosition::Left,

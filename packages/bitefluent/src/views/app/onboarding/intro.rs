@@ -22,47 +22,12 @@ pub fn OnboardingIntro() -> Element {
                 class: "mt-7 max-w-xl text-lg leading-8 text-[color:var(--text-secondary)]",
                 "Import a repository to start discovering and translating your Fluent files."
             }
-
-            div {
-                class: "mt-14 space-y-8",
-
-                OnboardingBenefit {
-                    icon: IconKind::Github,
-                    title: "Secure connection",
-                    description: "We only read repository content.",
-                }
-
-                OnboardingBenefit {
-                    icon: IconKind::Zap,
-                    title: "Quick and easy",
-                    description: "You can switch repositories anytime.",
-                }
-            }
-
-            div {
-                class: "mt-24 flex items-center gap-3 text-sm text-[color:var(--text-muted)]",
-
-                span {
-                    class: "inline-flex size-5 items-center justify-center rounded-md border border-white/[0.12] text-[color:var(--text-muted)]",
-
-                    RenderIcon {
-                        kind: IconKind::Lock,
-                        class: Some("size-3".to_string()),
-                    }
-                }
-
-                "BiteFluent is read-only and secure."
-            }
         }
     }
 }
 
 #[component]
-fn OnboardingBenefit(
-    icon: IconKind,
-    title: &'static str,
-    description: &'static str,
-) -> Element {
+fn OnboardingBenefit(icon: IconKind, title: &'static str, description: &'static str) -> Element {
     rsx! {
         div {
             class: "flex items-center gap-5",

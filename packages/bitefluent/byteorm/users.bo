@@ -1,42 +1,91 @@
 model Users {
-    id Text PrimaryKey
-
-    name Text?
-    email Text?
+    id             Text         PrimaryKey
+    name           Text?       
+    email          Text?       
     email_verified TimestamptZ?
-    image Text?
-    onboarded Boolean @default(false)
-
-    created_at TimestamptZ NotNull @default(now())
-    updated_at TimestamptZ NotNull @default(now())
+    image          Text?       
+    onboarded      Boolean      @default(false)
+    created_at     TimestamptZ  @default(now())
+    updated_at     TimestamptZ  @default(now())
 }
 
 model Accounts {
-    id Text PrimaryKey
-    user_id Text NotNull ForeignKey(Users.id, onDelete: cascade)
-
-    provider Text NotNull
-    provider_account_id Text NotNull
-
-    access_token Text?
-    refresh_token Text?
-    expires_at TimestamptZ?
-    token_type Text?
-    scope Text?
-    id_token Text?
-
-    created_at TimestamptZ NotNull @default(now())
-    updated_at TimestamptZ NotNull @default(now())
-
+    id                  Text         PrimaryKey
+    user_id             Text         ForeignKey(Users.id, onDelete: cascade)
+    provider            Text        
+    provider_account_id Text        
+    access_token        Text?       
+    refresh_token       Text?       
+    expires_at          TimestamptZ?
+    token_type          Text?       
+    scope               Text?       
+    id_token            Text?       
+    created_at          TimestamptZ  @default(now())
+    updated_at          TimestamptZ  @default(now())
     @@unique([provider, provider_account_id])
 }
 
 model Sessions {
-    session_token_hash Text PrimaryKey
+    session_token_hash Text        PrimaryKey
+    user_id            Text        ForeignKey(Users.id, onDelete: cascade)
+    expires_at         TimestamptZ
+    created_at         TimestamptZ @default(now())
+    updated_at         TimestamptZ @default(now())
+}
 
-    user_id Text NotNull ForeignKey(Users.id, onDelete: cascade)
-    expires_at TimestamptZ NotNull
+model Projects {
+    id                   Text         PrimaryKey
+    owner_id             Text         ForeignKey(Users.id, onDelete: cascade)
+    name                 Text        
+    slug                 Text        
+    provider             Text        
+    repository_id        BigInt      
+    repository_owner     Text        
+    repository_name      Text        
+    repository_full_name Text        
+    repository_private   Boolean     
+    default_branch       Text        
+    source_locale        Text?       
+    locales_path         Text?       
+    last_synced_at       TimestamptZ?
+    sync_status          Text?       
+    sync_error           Text?       
+    created_at           TimestamptZ  @default(now())
+    updated_at           TimestamptZ  @default(now())
+    @@unique([owner_id, slug])
+    @@unique([owner_id, provider, repository_id])
+}
 
-    created_at TimestamptZ NotNull @default(now())
-    updated_at TimestamptZ NotNull @default(now())
+model ProjectFiles {
+    id         Text        PrimaryKey
+    project_id Text        ForeignKey(Projects.id, onDelete: cascade)
+    path       Text       
+    locale     Text?      
+    sha        Text       
+    created_at TimestamptZ @default(now())
+    updated_at TimestamptZ @default(now())
+    @@unique([project_id, path])
+}
+
+model TranslationKeys {
+    id               Text        PrimaryKey
+    project_id       Text        ForeignKey(Projects.id, onDelete: cascade)
+    key              Text       
+    source_file_path Text       
+    source_value     Text       
+    created_at       TimestamptZ @default(now())
+    updated_at       TimestamptZ @default(now())
+    @@unique([project_id, key])
+}
+
+model TranslationValues {
+    id         Text        PrimaryKey
+    project_id Text        ForeignKey(Projects.id, onDelete: cascade)
+    key_id     Text        ForeignKey(TranslationKeys.id, onDelete: cascade)
+    locale     Text       
+    file_path  Text       
+    value      Text       
+    created_at TimestamptZ @default(now())
+    updated_at TimestamptZ @default(now())
+    @@unique([project_id, key_id, locale])
 }

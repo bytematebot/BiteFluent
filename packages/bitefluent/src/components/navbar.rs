@@ -83,7 +83,7 @@ pub fn Navbar() -> Element {
                                 variant: ButtonVariant::Primary,
                                 size: ButtonSize::Md,
                                 icon: None,
-                                to: Some("/start")
+                                to: "/start"
                             }
                         },
                         None => rsx! {

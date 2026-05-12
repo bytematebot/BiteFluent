@@ -63,13 +63,13 @@ pub fn CtaSection() -> Element {
                                     position: IconPosition::Right,
                                     class: Some("size-4".to_string()),
                                 }),
-                                to: Some("/start")
+                                to: "/start",
                             }
 
                             Button {
                                 label: "View on GitHub",
                                 variant: ButtonVariant::Secondary,
-                                href: Some("https://github.com/bytematebot/bitefluent"),
+                                href: "https://github.com/bytematebot/bitefluent",
                                 size: ButtonSize::Md,
                                 icon: Some(Icon {
                                     kind: IconKind::Github,

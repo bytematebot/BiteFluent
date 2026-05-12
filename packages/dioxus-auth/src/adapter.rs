@@ -1,7 +1,7 @@
-use async_trait::async_trait;
 use crate::AuthError;
 use crate::error::AuthResult;
 use crate::models::{AuthAccount, AuthUser, NewAuthAccount, NewAuthUser};
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait AuthAdapter: Send + Sync {
@@ -24,8 +24,5 @@ pub trait AuthAdapter: Send + Sync {
         provider: &str,
         provider_account_id: &str,
     ) -> AuthResult<Option<AuthAccount>>;
-    async fn get_github_account_for_user(
-        &self,
-        user_id: &str,
-    ) -> AuthResult<Option<AuthAccount>>;
+    async fn get_github_account_for_user(&self, user_id: &str) -> AuthResult<Option<AuthAccount>>;
 }

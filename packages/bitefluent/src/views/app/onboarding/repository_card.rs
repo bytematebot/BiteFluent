@@ -1,9 +1,10 @@
 use super::helpers::{
-    effective_owner, placeholder_repository, repository_owners,
+    effective_owner, effective_repository_id, placeholder_repository, repository_owners,
 };
 use super::repository_row::RepositoryRow;
 use crate::api::auth::AuthUserDto;
 use crate::api::github::GithubRepositoryDto;
+use crate::api::projects::import_github_repository;
 use crate::components::{
     Button, ButtonSize, ButtonVariant, Icon, IconKind, IconPosition, RenderIcon, Select,
     SelectOption, Skeleton,
@@ -18,6 +19,37 @@ pub fn RepositoryCard(
     selected_owner: Signal<Option<String>>,
     on_reload: EventHandler<MouseEvent>,
 ) -> Element {
+    let navigator = use_navigator();
+    let mut importing = use_signal(|| false);
+    let mut import_error = use_signal(|| None::<String>);
+
+    let current_owner = repository_state
+        .as_ref()
+        .and_then(|state| state.as_ref().ok())
+        .and_then(|repositories| {
+            selected_owner().or_else(|| repository_owners(repositories).first().cloned())
+        });
+
+    let visible_repositories = match repository_state.as_ref() {
+        Some(Ok(repositories)) => repositories
+            .iter()
+            .filter(|repository| {
+                current_owner
+                    .as_ref()
+                    .map(|owner| repository.owner == *owner)
+                    .unwrap_or(true)
+            })
+            .take(5)
+            .cloned()
+            .collect::<Vec<_>>(),
+        _ => Vec::new(),
+    };
+
+    let selected_id = selected_repository_id();
+    let effective_selected_id = effective_repository_id(selected_id, &visible_repositories);
+
+    let can_import = effective_selected_id.is_some() && !importing();
+
     rsx! {
         div {
             class: "w-full max-w-2xl justify-self-end",
@@ -38,15 +70,26 @@ pub fn RepositoryCard(
 
                 RepositoryList {
                     repository_state,
+                    visible_repositories,
                     selected_repository_id,
-                    selected_owner,
+                }
+
+                if let Some(error) = import_error() {
+                    div {
+                        class: "mt-4 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-200",
+                        "{error}"
+                    }
                 }
 
                 div {
                     class: "mt-6",
 
                     Button {
-                        label: "Import selected repository",
+                        label: if importing() {
+                            "Importing repository..."
+                        } else {
+                            "Import selected repository"
+                        },
                         variant: ButtonVariant::Primary,
                         size: ButtonSize::Lg,
                         full_width: true,
@@ -57,6 +100,27 @@ pub fn RepositoryCard(
                             position: IconPosition::Right,
                             class: Some("size-4".to_string()),
                         }),
+                        on_click: move |_| {
+                            let Some(repository_id) = effective_selected_id else {
+                                return;
+                            };
+
+                            importing.set(true);
+                            import_error.set(None);
+
+                            spawn(async move {
+                                match import_github_repository(repository_id).await {
+                                    Ok(project) => {
+                                        importing.set(false);
+                                        navigator.push(format!("/app/onboarding/{}", project.id));
+                                    }
+                                    Err(error) => {
+                                        importing.set(false);
+                                        import_error.set(Some(error.to_string()));
+                                    }
+                                }
+                            });
+                        },
                     }
                 }
             }
@@ -98,11 +162,8 @@ fn OwnerSelect(
         .map(|repositories| repository_owners(repositories))
         .unwrap_or_default();
 
-    let current_owner = effective_owner(
-        &repository_state,
-        selected_owner,
-        user.display_name.clone(),
-    );
+    let current_owner =
+        effective_owner(&repository_state, selected_owner, user.display_name.clone());
 
     let initial = current_owner.chars().next().unwrap_or('?');
 
@@ -193,32 +254,9 @@ fn RepositorySearch() -> Element {
 #[component]
 fn RepositoryList(
     repository_state: Option<ServerFnResult<Vec<GithubRepositoryDto>>>,
+    visible_repositories: Vec<GithubRepositoryDto>,
     selected_repository_id: Signal<Option<u64>>,
-    selected_owner: Signal<Option<String>>,
 ) -> Element {
-    let current_owner = repository_state
-        .as_ref()
-        .and_then(|state| state.as_ref().ok())
-        .and_then(|repositories| {
-            selected_owner()
-                .or_else(|| repository_owners(repositories).first().cloned())
-        });
-
-    let visible_repositories = match repository_state.as_ref() {
-        Some(Ok(repositories)) => repositories
-            .iter()
-            .filter(|repository| {
-                current_owner
-                    .as_ref()
-                    .map(|owner| repository.owner == *owner)
-                    .unwrap_or(true)
-            })
-            .take(5)
-            .cloned()
-            .collect::<Vec<_>>(),
-        _ => Vec::new(),
-    };
-
     let selected_id = selected_repository_id();
     let should_select_first = selected_id
         .map(|id| !visible_repositories.iter().any(|repo| repo.id == id))
@@ -278,9 +316,7 @@ fn RepositoryList(
 #[component]
 fn StateMessage(tone: &'static str, message: &'static str) -> Element {
     let class = match tone {
-        "error" => {
-            "rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-200"
-        }
+        "error" => "rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-200",
         _ => {
             "rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-sm leading-6 text-[color:var(--text-muted)]"
         }

@@ -2,14 +2,16 @@ mod api;
 #[cfg(feature = "server")]
 mod auth;
 mod components;
-mod views;
 #[cfg(feature = "server")]
 mod integrations;
+mod views;
 
 #[cfg(feature = "server")]
 use crate::auth::{BiteFluentAuthAdapter, BiteFluentSessionStore, Db};
 use crate::views::AppLayout;
+use crate::views::AppOnboardingProject;
 use crate::views::AppPlatform;
+use crate::views::AppProject;
 use crate::views::Home;
 use crate::views::Start;
 use dioxus::logger::tracing::Level;
@@ -21,8 +23,16 @@ enum Route {
     #[layout(AppLayout)]
         #[route("/")]
         Home {},
+
         #[route("/app")]
         AppPlatform {},
+
+        #[route("/app/onboarding/:project_id")]
+        AppOnboardingProject { project_id: String },
+
+        #[route("/app/projects/:project_id")]
+        AppProject { project_id: String },
+
         #[route("/start")]
         Start {},
 }
@@ -30,7 +40,7 @@ const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 const FAVICON: Asset = asset!("/assets/favicon/favicon-32x32.png");
 
 fn main() {
-    let _ = dioxus::logger::init(dioxus::logger::tracing::Level::DEBUG);
+    let _ = dioxus::logger::init(Level::DEBUG);
 
     #[cfg(feature = "server")]
     {

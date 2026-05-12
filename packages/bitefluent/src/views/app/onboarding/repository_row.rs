@@ -20,7 +20,11 @@ pub fn RepositoryRow(
         "flex size-6 shrink-0 items-center justify-center rounded-full border border-white/[0.16] bg-white/[0.02]"
     };
 
-    let visibility = if repository.private { "Private" } else { "Public" };
+    let visibility = if repository.private {
+        "Private"
+    } else {
+        "Public"
+    };
     let repository_id = repository.id;
 
     rsx! {

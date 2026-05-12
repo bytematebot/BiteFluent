@@ -1,5 +1,5 @@
-use dioxus::prelude::*;
 use crate::components::{IconKind, RenderIcon};
+use dioxus::prelude::*;
 
 #[derive(Clone, PartialEq)]
 pub struct SelectOption {
@@ -32,6 +32,18 @@ pub fn Select(props: SelectProps) -> Element {
 
     let extra_class = props.class.clone().unwrap_or_default();
 
+    let dropdown_class = if open() {
+        "pointer-events-auto translate-y-0 scale-100 opacity-100"
+    } else {
+        "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"
+    };
+
+    let chevron_class = if open() {
+        "rotate-180 text-[color:var(--text-muted)] transition duration-200"
+    } else {
+        "rotate-0 text-[color:var(--text-muted)] transition duration-200"
+    };
+
     rsx! {
         div {
             class: "relative {extra_class}",
@@ -62,11 +74,7 @@ pub fn Select(props: SelectProps) -> Element {
                 }
 
                 span {
-                    class: if open() {
-                        "rotate-180 text-[color:var(--text-muted)] transition"
-                    } else {
-                        "text-[color:var(--text-muted)] transition"
-                    },
+                    class: "{chevron_class}",
 
                     RenderIcon {
                         kind: IconKind::ChevronDown,
@@ -75,29 +83,28 @@ pub fn Select(props: SelectProps) -> Element {
                 }
             }
 
-            if open() {
-                div {
-                    class: "absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-white/[0.10] bg-[#111217] shadow-2xl shadow-black/40",
+            div {
+                class: "absolute left-0 right-0 top-full z-50 mt-2 origin-top overflow-hidden rounded-xl border border-white/[0.10] bg-[#111217] shadow-2xl shadow-black/40 transition duration-200 ease-out {dropdown_class}",
 
-                    for option in props.options.iter() {
-                        button {
-                            class: "flex h-11 w-full items-center px-4 text-left text-sm text-[color:var(--text-secondary)] transition hover:bg-white/[0.05] hover:text-[color:var(--text-primary)]",
-                            type: "button",
-                            onclick: {
-                                let value = option.value.clone();
-                                let on_change = props.on_change.clone();
+                for option in props.options.iter() {
+                    button {
+                        class: "flex h-11 w-full items-center px-4 text-left text-sm text-[color:var(--text-secondary)] transition hover:bg-white/[0.05] hover:text-[color:var(--text-primary)]",
+                        type: "button",
+                        tabindex: if open() { "0" } else { "-1" },
+                        onclick: {
+                            let value = option.value.clone();
+                            let on_change = props.on_change.clone();
 
-                                move |_| {
-                                    open.set(false);
+                            move |_| {
+                                open.set(false);
 
-                                    if let Some(on_change) = on_change.as_ref() {
-                                        on_change.call(value.clone());
-                                    }
+                                if let Some(on_change) = on_change.as_ref() {
+                                    on_change.call(value.clone());
                                 }
-                            },
+                            }
+                        },
 
-                            "{option.label}"
-                        }
+                        "{option.label}"
                     }
                 }
             }

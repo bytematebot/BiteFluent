@@ -1,9 +1,12 @@
+mod entry;
 mod helpers;
 mod intro;
+mod project;
 mod repository_card;
-
 mod repository_row;
 
+pub use entry::AppOnboardingEntry;
+pub use project::OnboardingProject;
 
 use crate::api::auth::AuthUserDto;
 use crate::api::github::fetch_github_repositories;

@@ -78,7 +78,7 @@ pub fn Start() -> Element {
 
                     Button {
                         label: "Continue with GitHub",
-                        href: Some("/auth/signin/github"),
+                        href: "/auth/signin/github",
                         variant: ButtonVariant::Primary,
                         size: ButtonSize::Lg,
                         full_width: true,

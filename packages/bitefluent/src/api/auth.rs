@@ -8,9 +8,8 @@ pub struct AuthUserDto {
     pub display_name: String,
     pub email: Option<String>,
     pub image: Option<String>,
+    pub onboarded: bool,
 }
-
-
 
 pub type AuthUserResource = Resource<Option<AuthUserDto>>;
 
@@ -18,7 +17,7 @@ pub type AuthUserResource = Resource<Option<AuthUserDto>>;
 pub enum AuthUserState {
     Loading,
     Guest,
-    Authenticated(AuthUserDto)
+    Authenticated(AuthUserDto),
 }
 
 impl AuthUserState {
@@ -83,9 +82,10 @@ pub async fn fetch_current_user() -> ServerFnResult<Option<AuthUserDto>> {
             return Ok(None);
         };
 
-        let adapter = BiteFluentAuthAdapter::new(db);
-        let Some(user) = adapter
-            .get_user_by_id(&session.user_id)
+        let Some(user) = db
+            .client
+            .users
+            .find_first(|user| user.where_id(session.user_id.clone()))
             .await
             .map_err(|error| ServerFnError::new(error.to_string()))?
         else {
@@ -104,6 +104,7 @@ pub async fn fetch_current_user() -> ServerFnResult<Option<AuthUserDto>> {
             display_name,
             email: user.email,
             image: user.image,
+            onboarded: user.onboarded,
         }));
     }
 

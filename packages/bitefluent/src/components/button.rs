@@ -30,11 +30,11 @@ pub struct ButtonProps {
     #[props(default = None)]
     pub icon: Option<Icon>,
 
-    #[props(default = None)]
-    pub to: Option<&'static str>,
+    #[props(default = None, into)]
+    pub to: Option<String>,
 
-    #[props(default = None)]
-    pub href: Option<&'static str>,
+    #[props(default = None, into)]
+    pub href: Option<String>,
 
     #[props(default = None)]
     pub on_click: Option<EventHandler<MouseEvent>>,
@@ -75,14 +75,13 @@ pub fn Button(props: ButtonProps) -> Element {
     };
 
     let width_class = if props.full_width { "w-full" } else { "" };
-
     let extra_class = props.class.clone().unwrap_or_default();
 
     let class = format!(
         "{layout_class} {width_class} rounded-lg font-medium transition {variant_class} {size_class} {extra_class}",
     );
 
-    if let Some(href) = props.href {
+    if let Some(href) = props.href.clone() {
         let is_external = href.starts_with("http://") || href.starts_with("https://");
 
         return rsx! {
@@ -101,7 +100,7 @@ pub fn Button(props: ButtonProps) -> Element {
         };
     }
 
-    if let Some(to) = props.to {
+    if let Some(to) = props.to.clone() {
         return rsx! {
             Link {
                 to,
@@ -116,14 +115,14 @@ pub fn Button(props: ButtonProps) -> Element {
         };
     }
 
-    let on_click = props.on_click;
+    let on_click = props.on_click.clone();
 
     rsx! {
         button {
             class: "{class}",
             type: "button",
             onclick: move |event| {
-                if let Some(on_click) = on_click {
+                if let Some(on_click) = on_click.as_ref() {
                     on_click.call(event);
                 }
             },

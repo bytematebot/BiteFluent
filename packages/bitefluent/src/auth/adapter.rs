@@ -139,10 +139,7 @@ impl AuthAdapter for BiteFluentAuthAdapter {
         account.map(map_account).transpose()
     }
 
-    async fn get_github_account_for_user(
-        &self,
-        user_id: &str,
-    ) -> AuthResult<Option<AuthAccount>> {
+    async fn get_github_account_for_user(&self, user_id: &str) -> AuthResult<Option<AuthAccount>> {
         let account = self
             .db
             .client
