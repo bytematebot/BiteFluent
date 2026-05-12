@@ -8,12 +8,17 @@ pub fn ProjectKeysPanel(
     selected_key: Option<String>,
     on_select_key: EventHandler<String>,
 ) -> Element {
+    let keys_count_label = match keys.len() {
+        1 => "1 key".to_string(),
+        count => format!("{count} keys"),
+    };
+
     rsx! {
         section {
-            class: "border-r border-white/[0.08] bg-white/[0.015]",
+            class: "flex h-full min-h-0 flex-col overflow-hidden border-r border-white/[0.08] bg-white/[0.015]",
 
             div {
-                class: "border-b border-white/[0.08] p-5",
+                class: "shrink-0 border-b border-white/[0.08] p-5",
 
                 p {
                     class: "text-sm font-semibold text-[color:var(--text-primary)]",
@@ -22,12 +27,12 @@ pub fn ProjectKeysPanel(
 
                 p {
                     class: "mt-1 text-xs text-[color:var(--text-muted)]",
-                    "{keys.len()} keys"
+                    "{keys_count_label}"
                 }
             }
 
             div {
-                class: "p-3",
+                class: "min-h-0 flex-1 overflow-y-auto p-3 [scrollbar-color:rgba(255,255,255,0.16)_transparent] [scrollbar-width:thin]",
 
                 if keys.is_empty() {
                     p {
@@ -36,7 +41,7 @@ pub fn ProjectKeysPanel(
                     }
                 } else {
                     div {
-                        class: "space-y-1",
+                        class: "space-y-1 pb-3",
 
                         for key in keys {
                             KeyButton {
@@ -62,15 +67,28 @@ fn KeyButton(
     on_select: EventHandler<String>,
 ) -> Element {
     let class = if selected {
-        "w-full rounded-xl border border-[color:var(--bg-accent)] bg-[var(--bg-accent)]/[0.08] px-3 py-3 text-left"
+        "group w-full rounded-xl border border-white/[0.10] bg-white/[0.055] px-3 py-3 text-left"
     } else {
-        "w-full rounded-xl border border-transparent px-3 py-3 text-left transition hover:border-white/[0.08] hover:bg-white/[0.035]"
+        "group w-full rounded-xl border border-transparent px-3 py-3 text-left transition hover:border-white/[0.08] hover:bg-white/[0.035]"
+    };
+
+    let icon_class = if selected {
+        "h-3.5 w-3.5 shrink-0 text-[color:var(--text-secondary)]"
+    } else {
+        "h-3.5 w-3.5 shrink-0 text-[color:var(--text-muted)] transition group-hover:text-[color:var(--text-secondary)]"
+    };
+
+    let key_class = if selected {
+        "truncate text-sm font-semibold text-[color:var(--text-primary)]"
+    } else {
+        "truncate text-sm font-medium text-[color:var(--text-primary)]"
     };
 
     rsx! {
         button {
             class: "{class}",
             type: "button",
+            title: "{entry.key}",
             onclick: {
                 let key = entry.key.clone();
 
@@ -80,15 +98,15 @@ fn KeyButton(
             },
 
             div {
-                class: "flex items-center gap-2",
+                class: "flex min-w-0 items-center gap-2",
 
                 RenderIcon {
                     kind: IconKind::Code,
-                    class: Some("size-3.5 shrink-0 text-[color:var(--text-muted)]".to_string()),
+                    class: Some(icon_class.to_string()),
                 }
 
                 p {
-                    class: "truncate text-sm font-semibold text-[color:var(--text-primary)]",
+                    class: "{key_class}",
                     "{entry.key}"
                 }
             }

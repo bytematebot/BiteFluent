@@ -67,6 +67,21 @@ pub struct ProjectSyncDto {
     pub keys_count: usize,
     pub translations_count: usize,
     pub locales_count: usize,
+    pub last_synced_at: Option<String>,
+    pub sync_status: Option<String>,
+    pub sync_error: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProjectSyncProgressDto {
+    pub total_files: usize,
+    pub processed_files: usize,
+    pub keys_count: usize,
+    pub translations_count: usize,
+    pub locales_count: usize,
+    pub message: String,
+    pub done: bool,
+    pub error: Option<String>,
 }
 
 #[cfg(feature = "server")]

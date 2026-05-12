@@ -1,15 +1,21 @@
 use crate::api::auth::AuthUserResource;
+use crate::api::projects::sync_project_from_github_stream;
 use crate::components::{
     Button, ButtonSize, ButtonVariant, Icon, IconKind, IconPosition, RenderIcon,
 };
 use dioxus::prelude::*;
+use futures_util::StreamExt;
 
 const LOGO: Asset = asset!("/assets/logo.svg");
 
 #[component]
-pub fn ProjectNavbar() -> Element {
+pub fn ProjectNavbar(project_id: String, on_synced: EventHandler<()>) -> Element {
     let current_user = use_context::<AuthUserResource>();
     let user_state = current_user.read().clone();
+
+    let mut syncing = use_signal(|| false);
+    let mut sync_progress = use_signal(|| None::<crate::api::projects::ProjectSyncProgressDto>);
+    let mut sync_error = use_signal(|| None::<String>);
 
     rsx! {
         header {
@@ -66,15 +72,89 @@ pub fn ProjectNavbar() -> Element {
                     class: "flex items-center gap-3",
 
                     Button {
-                        label: "Sync repository",
+                        label: sync_button_label(syncing(), sync_progress()),
                         variant: ButtonVariant::Secondary,
                         size: ButtonSize::Sm,
                         icon: Some(Icon {
                             kind: IconKind::Refresh,
                             position: IconPosition::Left,
-                            class: Some("size-4".to_string()),
+                            class: Some(if syncing() {
+                                "h-4 w-4 min-h-4 min-w-4 shrink-0 origin-center animate-spin".to_string()
+                            } else {
+                                "h-4 w-4 min-h-4 min-w-4 shrink-0".to_string()
+                            }),
                         }),
+                        class: Some(if syncing() {
+                            "cursor-wait opacity-80".to_string()
+                        } else {
+                            String::new()
+                        }),
+                        on_click: {
+                            let project_id = project_id.clone();
+
+                            move |_| {
+                                if syncing() {
+                                    return;
+                                }
+
+                                let project_id = project_id.clone();
+
+                                syncing.set(true);
+                                sync_error.set(None);
+                                sync_progress.set(None);
+
+                                spawn(async move {
+                                    let mut completed = false;
+
+                                    match sync_project_from_github_stream(project_id).await {
+                                        Ok(mut stream) => {
+                                            while let Some(progress_result) = stream.next().await {
+                                                match progress_result {
+                                                    Ok(progress) => {
+                                                        if let Some(error) = progress.error.clone() {
+                                                            sync_error.set(Some(error));
+                                                        }
+
+                                                        let done = progress.done;
+                                                        let has_error = progress.error.is_some();
+
+                                                        sync_progress.set(Some(progress));
+
+                                                        if done {
+                                                            completed = !has_error;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    Err(error) => {
+                                                        sync_error.set(Some(error.to_string()));
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Err(error) => {
+                                            sync_error.set(Some(error.to_string()));
+                                        }
+                                    }
+
+                                    syncing.set(false);
+
+                                    if completed {
+                                        on_synced.call(());
+                                    }
+                                });
+                            }
+                        },
                     }
+                    if let Some(error) = sync_error() {
+                        span {
+                            class: "hidden max-w-80 truncate text-xs text-red-300 md:block",
+                            "{error}"
+                        }
+                    }
+
 
                     button {
                         class: "hidden h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[color:var(--text-secondary)] transition hover:bg-white/[0.05] hover:text-[color:var(--text-primary)] md:inline-flex",
@@ -157,4 +237,34 @@ fn ProjectUserBadge(name: Option<String>, image: Option<String>) -> Element {
             }
         }
     }
+}
+
+fn sync_button_label(
+    syncing: bool,
+    progress: Option<crate::api::projects::ProjectSyncProgressDto>,
+) -> String {
+    if !syncing {
+        return "Sync repository".to_string();
+    }
+
+    let Some(progress) = progress else {
+        return "Syncing...".to_string();
+    };
+
+    if progress.done {
+        return "Synced".to_string();
+    }
+
+    if progress.total_files > 0 && progress.processed_files < progress.total_files {
+        return format!(
+            "Syncing {}/{}",
+            progress.processed_files, progress.total_files
+        );
+    }
+
+    if !progress.message.is_empty() {
+        return progress.message;
+    }
+
+    "Syncing...".to_string()
 }

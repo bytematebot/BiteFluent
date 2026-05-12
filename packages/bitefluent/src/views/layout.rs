@@ -11,7 +11,6 @@ pub fn AppLayout() -> Element {
     use_context_provider(|| current_user);
 
     let route = use_route::<Route>();
-    let is_project_workspace = matches!(route, Route::AppProject { .. });
 
     let mut transition_tick = use_signal(|| 0usize);
 
@@ -29,10 +28,17 @@ pub fn AppLayout() -> Element {
         div {
             class: "min-h-screen bg-[image:var(--bg-main)] font-sans text-[color:var(--text-primary)]",
 
-            if is_project_workspace {
-                ProjectNavbar {}
-            } else {
-                Navbar {}
+            match route.clone() {
+                Route::AppProject { project_id } => rsx! {
+                    ProjectNavbar {
+                        project_id,
+                        on_synced: move |_| {}
+                    }
+                },
+
+                _ => rsx! {
+                    Navbar {}
+                },
             }
 
             main {
@@ -41,7 +47,10 @@ pub fn AppLayout() -> Element {
                 Outlet::<Route> {}
             }
 
-            if !is_project_workspace {
+            if !matches!(route.clone(),
+                Route::AppProject { .. } |
+                Route::AppOnboardingProject { .. } |
+                Route::AppPlatform { ..}) {
                 Footer {}
             }
         }

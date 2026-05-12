@@ -23,7 +23,7 @@ pub fn AppProject(project_id: String) -> Element {
         crate::components::Meta { r#for: MetaFor::Home }
 
         section {
-            class: "mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 pt-20 pb-4 lg:px-6",
+            class: "mx-auto box-border flex h-[100dvh] min-h-0 w-full max-w-[1800px] flex-col overflow-hidden px-4 pb-4 pt-20 lg:px-6",
 
             match workspace.read().as_ref() {
                 None => rsx! {
@@ -78,29 +78,41 @@ fn ProjectWorkspace(
 
     rsx! {
         div {
-            class: "grid min-h-[calc(100vh-6rem)] overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.025] shadow-2xl shadow-black/30 lg:grid-cols-[18rem_minmax(22rem,30rem)_1fr]",
+            class: "grid h-full min-h-0 grid-rows-[minmax(0,1fr)] overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.025] shadow-2xl shadow-black/30 lg:grid-cols-[18rem_minmax(22rem,30rem)_minmax(0,1fr)]",
 
-            ProjectSidebar {
-                project: workspace.project.clone(),
-                files: workspace.files.clone(),
-                selected_file: current_file.clone(),
-                on_select_file: move |path| {
-                    selected_file.set(Some(path));
-                    selected_key.set(None);
-                },
+            div {
+                class: "min-h-0 overflow-hidden",
+
+                ProjectSidebar {
+                    project: workspace.project.clone(),
+                    files: workspace.files.clone(),
+                    selected_file: current_file.clone(),
+                    on_select_file: move |path| {
+                        selected_file.set(Some(path));
+                        selected_key.set(None);
+                    },
+                }
             }
 
-            ProjectKeysPanel {
-                keys: visible_keys,
-                selected_key: current_key,
-                on_select_key: move |key| {
-                    selected_key.set(Some(key));
-                },
+            div {
+                class: "min-h-0 overflow-hidden",
+
+                ProjectKeysPanel {
+                    keys: visible_keys,
+                    selected_key: current_key,
+                    on_select_key: move |key| {
+                        selected_key.set(Some(key));
+                    },
+                }
             }
 
-            ProjectEditorPanel {
-                project: workspace.project,
-                entry: selected_entry,
+            div {
+                class: "min-h-0 overflow-hidden",
+
+                ProjectEditorPanel {
+                    project: workspace.project,
+                    entry: selected_entry,
+                }
             }
         }
     }
@@ -110,12 +122,12 @@ fn ProjectWorkspace(
 fn ProjectWorkspaceSkeleton() -> Element {
     rsx! {
         div {
-            class: "grid min-h-[calc(100vh-6rem)] overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.025] lg:grid-cols-[18rem_minmax(22rem,30rem)_1fr]",
+            class: "grid min-h-0 flex-1 overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.025] lg:grid-cols-[18rem_minmax(22rem,30rem)_1fr]",
 
             for _ in 0..3 {
                 Skeleton {
                     suspend: true,
-                    class: "min-h-[calc(100vh-6rem)] bg-white/[0.03]".to_string(),
+                    class: "h-full min-h-0 bg-white/[0.03]".to_string(),
                     div {}
                 }
             }

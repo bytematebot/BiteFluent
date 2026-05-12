@@ -10,9 +10,8 @@ pub async fn fetch_project_workspace(
     {
         use super::dto::map_project;
         use super::helpers::session_cookie;
-        use crate::auth::{BiteFluentAuthAdapter, BiteFluentSessionStore, Db};
-        use crate::integrations::github::GithubClient;
-        use dioxus_auth::{AuthAdapter, SessionStore};
+        use crate::auth::{BiteFluentSessionStore, Db};
+        use dioxus_auth::SessionStore;
 
         dotenvy::dotenv().ok();
 
@@ -52,53 +51,25 @@ pub async fn fetch_project_workspace(
             return Ok(None);
         };
 
-        let adapter = BiteFluentAuthAdapter::new(db.clone());
+        let project_dto = map_project(project);
 
-        let Some(account) = adapter
-            .get_github_account_for_user(&session.user_id)
+        let mut files = db
+            .client
+            .project_files
+            .find_many(|file| file.where_project_id(project_dto.id.clone()))
             .await
             .map_err(|error| ServerFnError::new(error.to_string()))?
-        else {
-            return Err(ServerFnError::new("missing GitHub account"));
-        };
-
-        let Some(access_token) = account.access_token else {
-            return Err(ServerFnError::new("missing GitHub access token"));
-        };
-
-        let github = GithubClient::new(access_token);
-
-        let locales_path = project
-            .locales_path
-            .clone()
-            .unwrap_or_else(|| ".".to_string());
-
-        let source_locale = project.source_locale.clone();
-
-        let tree = github
-            .repository_tree_under_path(
-                &project.repository_owner,
-                &project.repository_name,
-                &project.default_branch,
-                &locales_path,
-            )
-            .await
-            .map_err(|error| ServerFnError::new(error.to_string()))?;
-
-        let mut files = tree
             .into_iter()
-            .filter(|item| item.kind == "blob")
-            .filter(|item| item.path.ends_with(".ftl"))
-            .map(|item| ProjectWorkspaceFileDto {
-                name: item
+            .map(|file| ProjectWorkspaceFileDto {
+                name: file
                     .path
                     .rsplit('/')
                     .next()
-                    .unwrap_or(&item.path)
+                    .unwrap_or(&file.path)
                     .to_string(),
-                locale: infer_locale_from_project_path(&item.path, source_locale.as_deref()),
-                path: item.path,
-                sha: item.sha,
+                path: file.path,
+                sha: file.sha,
+                locale: file.locale,
             })
             .collect::<Vec<_>>();
 
@@ -108,20 +79,22 @@ pub async fn fetch_project_workspace(
                 .then_with(|| left.path.cmp(&right.path))
         });
 
-        let mut keys = Vec::new();
+        let translation_keys = db
+            .client
+            .translation_keys
+            .find_many(|key| key.where_project_id(project_dto.id.clone()))
+            .await
+            .map_err(|error| ServerFnError::new(error.to_string()))?;
 
-        for file in files.iter() {
-            let content = github
-                .repository_blob_content(
-                    &project.repository_owner,
-                    &project.repository_name,
-                    &file.sha,
-                )
-                .await
-                .map_err(|error| ServerFnError::new(error.to_string()))?;
-
-            keys.extend(parse_fluent_keys(&file.path, file.locale.clone(), &content));
-        }
+        let mut keys = translation_keys
+            .into_iter()
+            .map(|key| ProjectWorkspaceKeyDto {
+                key: key.key,
+                file_path: key.source_file_path,
+                locale: project_dto.source_locale.clone(),
+                value: key.source_value,
+            })
+            .collect::<Vec<_>>();
 
         keys.sort_by(|left, right| {
             left.file_path
@@ -130,7 +103,7 @@ pub async fn fetch_project_workspace(
         });
 
         Ok(Some(ProjectWorkspaceDto {
-            project: map_project(project),
+            project: project_dto,
             files,
             keys,
         }))
@@ -141,84 +114,5 @@ pub async fn fetch_project_workspace(
         Err(ServerFnError::new(
             "fetch_project_workspace can only run on the server",
         ))
-    }
-}
-
-#[cfg(feature = "server")]
-fn parse_fluent_keys(
-    file_path: &str,
-    locale: Option<String>,
-    content: &str,
-) -> Vec<ProjectWorkspaceKeyDto> {
-    let mut keys = Vec::new();
-    let mut current_key: Option<String> = None;
-    let mut current_value = String::new();
-
-    for line in content.lines() {
-        let trimmed = line.trim();
-
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-
-        if !line.starts_with(' ') && !line.starts_with('\t') {
-            if let Some(key) = current_key.take() {
-                keys.push(ProjectWorkspaceKeyDto {
-                    key,
-                    file_path: file_path.to_string(),
-                    locale: locale.clone(),
-                    value: current_value.trim().to_string(),
-                });
-
-                current_value.clear();
-            }
-
-            if let Some((key, value)) = trimmed.split_once('=') {
-                current_key = Some(key.trim().to_string());
-                current_value = value.trim().to_string();
-            }
-        } else if current_key.is_some() {
-            if !current_value.is_empty() {
-                current_value.push('\n');
-            }
-
-            current_value.push_str(trimmed);
-        }
-    }
-
-    if let Some(key) = current_key {
-        keys.push(ProjectWorkspaceKeyDto {
-            key,
-            file_path: file_path.to_string(),
-            locale,
-            value: current_value.trim().to_string(),
-        });
-    }
-
-    keys
-}
-
-#[cfg(feature = "server")]
-fn infer_locale_from_project_path(path: &str, source_locale: Option<&str>) -> Option<String> {
-    for part in path.split('/') {
-        if looks_like_locale(part) {
-            return Some(part.replace('_', "-"));
-        }
-    }
-
-    source_locale.map(ToString::to_string)
-}
-
-#[cfg(feature = "server")]
-fn looks_like_locale(value: &str) -> bool {
-    let normalized = value.replace('_', "-");
-    let parts = normalized.split('-').collect::<Vec<_>>();
-
-    match parts.as_slice() {
-        [language] => language.len() == 2 || language.len() == 3,
-        [language, region] => {
-            (language.len() == 2 || language.len() == 3) && (region.len() == 2 || region.len() == 4)
-        }
-        _ => false,
     }
 }
